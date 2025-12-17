@@ -21,26 +21,58 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
-app.use(helmet());
-app.use(cors());
+// ========== Security Middleware ==========
 
-// Rate limiting
+// Helmet for basic security headers
+app.use(helmet());
+
+// CORS - Allow your live frontend + localhost
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://finance-app-1-srt0.onrender.com",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // Allows cookies/auth headers if needed in future
+  })
+);
+
+// Rate limiting - only on API routes
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  message: { error: "Too many requests, please try again later." },
 });
 app.use("/api/", limiter);
 
-// Body parser
-app.use(express.json());
+// ========== Body Parsers ==========
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ========== Routes ==========
+
+// Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Server is running" });
+  res.json({
+    status: "ok",
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+  });
 });
 
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -49,10 +81,13 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/budget", budgetRoutes);
 
-// Error handler (must be last)
+// ========== Error Handler (Always Last) ==========
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+// ========== Start Server ==========
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 API available at http://localhost:${PORT}/api`);
+  console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
 });
+
+export default app; // Optional: useful for testing
