@@ -10,7 +10,7 @@ import RegisterForm from "./components/RegisterForm";
 import Dashboard from "./components/Dashboard";
 import Transactions from "./components/Transactions";
 import MyNavbar from "./components/MyNavbar";
-import PublicNavBar from "./components/PublicNavBar";
+import PublicNavbar from "./components/PublicNavBar";
 import About from "./components/About";
 import Profile from "./components/Profile";
 import Landing from "./components/Landing";
